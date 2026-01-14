@@ -3,9 +3,9 @@ spring:
     name: "Snowflake ID Generator"
 
 snowflake-settings:
-  starting-epoch: 946684800
-  datacenter-id: 1
-  worked-id: 1
+  starting-epoch: ${STARTING_EPOCH:946684800}
+  datacenter-id: ${DATACENTER_ID:1}
+  worked-id: ${WORKED_ID:1}
 
 management:
   endpoints:
