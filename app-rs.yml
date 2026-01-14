@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: snowflake-id-generator-replicaset
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: snowflake-id-generator
+  template:
+    metadata:
+      labels:
+        app: snowflake-id-generator
+    spec:
+      # Init Container для генерации уникального worked-id
+      # (Обратите внимание: в коде "workedId", не "workerId")
+      initContainers:
+        - name: init-worked-id
+          image: alpine:latest
+          command: ['sh', '-c']
+          args:
+            - |
+              # Генерируем случайный worked-id от 1 до 31
+              # Примечание: в коде проверка workedId > 0 && workedId <= maxWorkerId
+              WORKED_ID=$(( (RANDOM % 31) + 1 ))
+              echo "Generated worked-id: $WORKED_ID"
+              echo "$WORKED_ID" > /config/worked-id
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+      containers:
+        - name: snowflake-id-generator
+          image: snowflake-id-generator:latest
+          imagePullPolicy: IfNotPresent
+          # Переменные окружения
+          env:
+            # Основные настройки из ConfigMap
+            - name: SNOWFLAKE_SETTINGS_STARTING_EPOCH
+              valueFrom:
+                configMapKeyRef:
+                  name: snowflake-config
+                  key: snowflake-settings.starting-epoch
+            - name: SNOWFLAKE_SETTINGS_DATACENTER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: snowflake-config
+                  key: snowflake-settings.datacenter-id
+            # Динамический worked-id из initContainer
+            - name: SNOWFLAKE_SETTINGS_WORKED_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: snowflake-config
+                  optional: true
+                  key: worked-id
+            # Spring Boot application name
+            - name: APPLICATION_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: snowflake-config
+                  key: spring.application.name
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config
+              readOnly: true
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /management/health/liveness
+              port: 8080
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /management/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+      volumes:
+        - name: config-volume
+          emptyDir: {}

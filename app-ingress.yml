@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    kubernetes.io/ingress.class: contour
+spec:
+  tls:
+    - hosts:
+        - snowflake.dev.local
+    - secretName: snowflake-tls # Подключение объекта Secret с типом TLS
+  rules:
+    - host: snowflake.dev.local # имя хоста
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service # имя сервиса
+                port:
+                  number: 80 # порт сервиса

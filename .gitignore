@@ -37,3 +37,8 @@ out/
 .vscode/
 
 .DS_Store
+
+*.crt
+*.key
+*.crt.base64
+*.key.base64
