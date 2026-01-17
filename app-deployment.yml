@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snowflake-id-generator-replicaset
+  annotations:
+    kubernetes.io/change-cause: "Update to 1.0.2" # Описание к ревизии
+spec:
+  replicas: 3 # Необходимое количества реплик
+  strategy: # Стратегия развертывания типа RollingUpdate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  selector:
+    matchLabels:
+      app: snowflake-id-generator # Селектор поиска (маппинга) объектов Pod для ReplicaSet
+  template:
+    metadata:
+      labels:
+        app: snowflake-id-generator # Метка Pod по которой ReplicaSet будет его искать
+    spec:
+      containers:
+        - name: snowflake-id-generator
+          image: snowflake-id-generator:1.0.2
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /management/health/liveness
+              port: 8080
+            initialDelaySeconds: 15
+            timeoutSeconds: 2
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /management/health/readiness
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 1
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
