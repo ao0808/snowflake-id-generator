@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: snowflake-id-generator-replicaset
+  name: snowflake-id-generator-deployment
   annotations:
     kubernetes.io/change-cause: "Update to 1.0.2" # Описание к ревизии
 spec:
-  replicas: 3 # Необходимое количества реплик
+  replicas: 1 # Необходимое количества реплик
   strategy: # Стратегия развертывания типа RollingUpdate
     type: RollingUpdate
     rollingUpdate:
@@ -27,6 +27,13 @@ spec:
             - containerPort: 8080
               name: http
               protocol: TCP
+          resources:
+            requests: # Минимальное гарантируемые ресурсы
+              cpu: "500m"
+              memory: "256Mi"
+            limits: # Максимально допустимые ресурсы
+              cpu: "1000m"
+              memory: "500Mi"
           livenessProbe:
             httpGet:
               path: /management/health/liveness
