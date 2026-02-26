@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: snowflake-id-generator-replicaset
+spec:
+  replicas: 3 # Необходимое количества реплик
+  selector:
+    matchLabels:
+      app: snowflake-id-generator # Селектор поиска (маппинга) объектов Pod для ReplicaSet
+  template:
+    metadata:
+      labels:
+        app: snowflake-id-generator # Метка Pod по которой ReplicaSet будет его искать
+    spec:
+      containers:
+      - name: snowflake-id-generator
+        image: snowflake-id-generator:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /management/health/liveness
+            port: 8080
+          initialDelaySeconds: 15
+          timeoutSeconds: 2
+          periodSeconds: 20
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /management/health/readiness
+            port: 8080
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+          periodSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
