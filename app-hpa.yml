@@ -17,7 +17,7 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70 # Средняя загрузка ЦПУ более 70% после чего начинается масштабирование
+          averageUtilization: 50 # Средняя загрузка ЦПУ более 70% после чего начинается масштабирование
     - type: Resource
       resource:
         name: memory
